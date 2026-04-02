@@ -278,7 +278,7 @@
   }
 
   // UPDATED: Submit Bill to Cloud
-  async function submitBill() {
+ async function submitBill() {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('u-name').value;
     const amt = parseFloat(document.getElementById('u-amount').value || 0);
@@ -288,45 +288,33 @@
     const cat = document.getElementById('u-cat').value;
     const desc = document.getElementById('u-desc').value;
 
-    // 1. Validation check
-    if (!name || amt <= 0 || currentFileObjects.length === 0) { 
-        showToast('⚠️ Fill all fields and attach files'); 
+    // 1. Validation (We removed the file requirement here)
+    if (!name || amt <= 0) { 
+        showToast('⚠️ Please fill in the Name and Amount'); 
         return; 
     }
 
-    // 2. Disable the button and change text to show progress
     btn.disabled = true;
-    btn.innerText = "Uploading..."; 
-    showToast('Uploading to Cloud...');
+    btn.innerText = "Submitting..."; 
 
     try {
-        let uploadedFiles = [];
-        for (let file of currentFileObjects) {
-            const fileRef = storage.ref(`receipts/${Date.now()}_${file.name}`);
-            await fileRef.put(file);
-            const url = await fileRef.getDownloadURL();
-            uploadedFiles.push({ name: file.name, url: url });
-        }
-
-        // 3. Push to Realtime Database
+        // 2. Push directly to Realtime Database
+        // We put a placeholder for files since Storage is disabled
         await rtdb.ref('bills').push({
             name, centre, date, program, cat, amt, desc,
-            files: uploadedFiles, 
+            files: [{ name: "No File (Storage Disabled)", url: "#" }], 
             status: 'Pending',
             timestamp: Date.now()
         });
 
-        // 4. Success - Clear the form
-        currentFileObjects = [];
-        document.getElementById('dz-text').innerHTML = "📎 <strong>Click or drag files (PDF/Image)</strong>";
+        // 3. Success - Clear the form
         document.querySelectorAll('#user-page input, #user-page select').forEach(i => i.value = '');
-        showToast('✅ Expense Submitted!');
+        showToast('✅ Expense Submitted Successfully!');
 
     } catch (e) {
-        console.error("Upload Error:", e);
-        showToast('❌ Upload Failed: ' + e.message);
+        console.error("Database Error:", e);
+        showToast('❌ Error: ' + e.message);
     } finally {
-        // 5. CRITICAL: This re-enables the button for the next submission
         btn.disabled = false;
         btn.innerText = "Submit Bill →";
     }
