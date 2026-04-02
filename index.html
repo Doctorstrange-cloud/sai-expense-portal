@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpensePortal — Multi-Bill Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue-50: #E6F1FB; --blue-100: #B5D4F4; --blue-400: #378ADD; --blue-600: #185FA5;
+      --blue-800: #0C447C; --blue-900: #042C53; --teal-50: #E1F5EE; --teal-400: #1D9E75;
+      --teal-600: #0F6E56; --amber-50: #FAEEDA; --amber-600: #854F0B; --red-50: #FCEBEB;
+      --red-600: #A32D2D; --gray-50: #F8F7F4; --gray-100: #EEEDE8; --gray-200: #D3D1C7;
+      --gray-400: #888780; --gray-600: #5F5E5A; --gray-900: #1A1A18; --white: #ffffff;
+      --radius-md: 10px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.06); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--gray-900); min-height: 100vh; }
+
+    /* NAVBAR */
+    .navbar {
+      position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--gray-100);
+      padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px;
+    }
+    .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--gray-900); }
+    .logo em { color: var(--blue-600); font-style: normal; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-badge { background: var(--blue-50); color: var(--blue-600); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 100px; }
+    .nav-switch { display: flex; background: var(--gray-100); border-radius: 100px; padding: 3px; }
+    .nav-switch button { padding: 6px 18px; border: none; border-radius: 100px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--gray-400); transition: 0.2s; }
+    .nav-switch button.active { background: var(--white); color: var(--blue-600); box-shadow: var(--shadow-sm); }
+
+    /* LAYOUT */
+    .page { display: none; }
+    .page.active { display: block; }
+    .hero { background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-600) 100%); padding: 3rem 2rem 5rem; text-align: center; color: white; }
+    .hero h1 { font-family: 'DM Serif Display', serif; font-size: 2.8rem; margin-bottom: 0.5rem; }
+    .hero p { opacity: 0.8; font-size: 15px; }
+
+    /* ADMIN STAT CARDS */
+    .stats-container {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        max-width: 1150px; margin: -3.5rem auto 2rem; padding: 0 1.5rem;
+    }
+    .stat-card {
+        background: white; padding: 1.5rem; border-radius: 16px; box-shadow: var(--shadow-md); border-left: 4px solid var(--blue-400);
+    }
+    .stat-card:nth-child(2) { border-left-color: #f59e0b; }
+    .stat-card:nth-child(3) { border-left-color: #10b981; }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 28px; font-weight: 600; color: var(--gray-900); margin: 5px 0; }
+    .stat-sub { font-size: 12px; color: var(--gray-400); }
+
+    .main-content { max-width: 1150px; margin: 0 auto 3rem; padding: 0 1.5rem; }
+    .card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 2rem; margin-bottom: 1.5rem; }
+    
+    /* MODALS */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(4, 44, 83, 0.85); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; z-index: 2000;
+    }
+    .modal-content {
+      background: white; padding: 2.5rem; border-radius: var(--radius-xl);
+      width: 400px; text-align: center; box-shadow: var(--shadow-md);
+    }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 15px; font-size: 11px; color: var(--gray-400); text-transform: uppercase; border-bottom: 2px solid var(--gray-100); }
+    td { padding: 15px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    
+    .btn-view { background: var(--blue-50); color: var(--blue-600); border: 1px solid var(--blue-100); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+    
+    /* USER FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 12px; font-weight: 500; color: var(--gray-600); }
+    .form-group input, .form-group select { padding: 10px 12px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-md); background: var(--gray-50); }
+    .form-full { grid-column: 1 / -1; }
+    .drop-zone { border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 2rem 1rem; text-align: center; cursor: pointer; background: var(--gray-50); }
+    .btn-primary { width: 100%; padding: 13px; background: var(--blue-600); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
+    
+    .badge { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+    .badge-pending { background: var(--amber-50); color: var(--amber-600); }
+    .badge-approved { background: var(--teal-50); color: var(--teal-600); }
+    .badge-rejected { background: var(--red-50); color: var(--red-600); }
+
+    /* ACTION BUTTONS */
+    .action-group { display: flex; gap: 8px; }
+    .btn-tick { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--teal-400); color: var(--teal-600); background: var(--teal-50); cursor: pointer; }
+    .btn-cross { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--red-600); color: var(--red-600); background: var(--red-50); cursor: pointer; }
+    
+    .file-link { display: block; padding: 10px; margin-bottom: 5px; background: #f8fafc; border-radius: 6px; text-decoration: none; color: var(--blue-600); font-weight: 500; border: 1px solid #e2e8f0; }
+    .file-link:hover { background: var(--blue-50); }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 50px; opacity: 0; transition: 0.3s; z-index: 3000; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="login-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h2 style="font-family: 'DM Serif Display'; margin-bottom: 15px;">Admin Login</h2>
+    <input type="text" id="admin-user" placeholder="Username" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+    <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+    <button class="btn-primary" onclick="verifyAdmin()">Enter Dashboard</button>
+    <button onclick="closeLogin()" style="background:none; border:none; margin-top:15px; color:#666; cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+<div id="file-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-family: 'DM Serif Display';">Download/View Files</h3>
+      <div id="file-list-container" style="text-align:left; margin-bottom:20px;"></div>
+      <button class="btn-primary" onclick="document.getElementById('file-modal').style.display='none'">Close</button>
+    </div>
+</div>
+
+<nav class="navbar">
+  <div class="logo"><em>Sai Expense</em> Portal</div>
+  <div class="nav-right">
+    <span class="nav-badge" id="pending-badge-nav">0 pending</span>
+    <div class="nav-switch">
+      <button id="btn-user" class="active" onclick="switchView('user', this)">User</button>
+      <button id="btn-admin" onclick="switchView('admin', this)">Admin</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page active" id="user-page">
+  <div class="hero">
+    <h1>Submit your expenses</h1>
+    <p>Upload receipts and fill correct details</p>
+  </div>
+  <div class="main-content" style="margin-top: -2rem;">
+    <div class="card">
+      <div class="card-title" style="font-weight: 600; font-size: 18px; margin-bottom: 20px;">📤 New submission</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Full name</label><input type="text" id="u-name" placeholder="Name" /></div>
+        <div class="form-group"><label>Centre name</label><input type="text" id="u-centre" placeholder="Centre" /></div>
+        <div class="form-group"><label>Date of Expense</label><input type="date" id="u-date" /></div>
+        <div class="form-group"><label>Program Type</label><select id="u-program"><option value="">Select Program</option><option>NSP Regular</option><option>NSP Makeup</option><option>Cluster Regular</option><option>Cluster Makeup</option><option>Other</option></select></div>
+        <div class="form-group"><label>Category</label><select id="u-cat"><option value="">Select Category</option><option>Travel</option><option>Stationary</option><option>Other</option></select></div>
+        <div class="form-group"><label>Amount (₹)</label><input type="number" id="u-amount" placeholder="0.00" /></div>
+        <div class="form-group form-full"><label>Description</label><input type="text" id="u-desc" placeholder="Details..." /></div>
+      </div>
+      <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+        <p id="dz-text">📎 <strong>Click or drag files (PDF/Image)</strong></p>
+        <input type="file" id="file-input" style="display:none" onchange="handleFiles(this.files)" multiple />
+      </div>
+      <br><button class="btn-primary" onclick="submitBill()">Submit Bill →</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="admin-page">
+  <div class="hero">
+    <h1>Admin dashboard</h1>
+    <p>Review, approve and manage all expense submissions</p>
+  </div>
+  
+  <div class="stats-container">
+      <div class="stat-card">
+          <div class="stat-label">Total Submissions</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-label">Pending Review</div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-sub">Needs action</div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-label">Total Amount</div>
+          <div class="stat-value" id="stat-amount">₹0</div>
+          <div class="stat-sub">All submissions</div>
+      </div>
+  </div>
+
+  <div class="main-content">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Centre</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Files</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let bills = [];
+  let nextId = 1;
+  let currentFileObjects = []; // Stores actual file data temporarily
+  let isAdminAuthenticated = false;
+
+  function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); }
+
+  function switchView(v, btn) {
+    if (v === 'admin' && !isAdminAuthenticated) {
+      document.getElementById('login-modal').style.display = 'flex';
+      return;
+    }
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-switch button').forEach(b => b.classList.remove('active'));
+    document.getElementById(v + '-page').classList.add('active');
+    btn.classList.add('active');
+    if(v === 'admin') renderAdmin();
+  }
+
+  function verifyAdmin() {
+    if (document.getElementById('admin-user').value === 'admin' && document.getElementById('admin-pass').value === 'admin123') {
+      isAdminAuthenticated = true;
+      document.getElementById('login-modal').style.display = 'none';
+      switchView('admin', document.getElementById('btn-admin'));
+    } else { alert("Invalid Credentials"); }
+  }
+
+  function closeLogin() {
+    document.getElementById('login-modal').style.display = 'none';
+    switchView('user', document.getElementById('btn-user'));
+  }
+
+  // --- FILE HANDLING LOGIC ---
+  function handleFiles(files) {
+    currentFileObjects = Array.from(files);
+    document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} files attached`;
+  }
+
+  function submitBill() {
+    const data = {
+      name: document.getElementById('u-name').value,
+      centre: document.getElementById('u-centre').value,
+      date: document.getElementById('u-date').value,
+      cat: document.getElementById('u-cat').value,
+      amt: parseFloat(document.getElementById('u-amount').value || 0),
+      desc: document.getElementById('u-desc').value,
+      files: [...currentFileObjects] // Store the actual File Objects
+    };
+
+    if (!data.name || data.amt <= 0 || data.files.length === 0) { 
+        showToast('⚠️ Fill all fields and attach files'); 
+        return; 
+    }
+
+    bills.push({ id: nextId++, ...data, status: 'Pending' });
+    
+    // Reset Form
+    currentFileObjects = [];
+    document.getElementById('dz-text').innerHTML = "📎 <strong>Click or drag files (PDF/Image)</strong>";
+    document.querySelectorAll('#user-page input, #user-page select').forEach(i => i.value = '');
+    showToast('✅ Expense Submitted!');
+    updateBadge();
+  }
+
+  function updateBadge() {
+    const count = bills.filter(b => b.status === 'Pending').length;
+    document.getElementById('pending-badge-nav').textContent = count + ' pending';
+    document.getElementById('stat-total').textContent = bills.length;
+    document.getElementById('stat-pending').textContent = count;
+    const totalAmt = bills.reduce((sum, b) => sum + b.amt, 0);
+    document.getElementById('stat-amount').textContent = '₹' + totalAmt.toLocaleString();
+  }
+
+  function renderAdmin() {
+    const tbody = document.getElementById('admin-body');
+    tbody.innerHTML = bills.map(b => `
+      <tr>
+        <td><strong>${b.name}</strong></td>
+        <td>${b.centre}</td>
+        <td>${b.cat}</td>
+        <td><strong>₹${b.amt.toLocaleString()}</strong></td>
+        <td>${b.desc || '—'}</td>
+        <td><button class="btn-view" onclick="viewUserFiles(${b.id})">View Files (${b.files.length})</button></td>
+        <td>${b.date}</td>
+        <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
+        <td>
+          ${b.status === 'Pending' ? `
+            <div class="action-group">
+                <button class="btn-tick" title="Approve" onclick="setStatus(${b.id}, 'Approved')">✔</button>
+                <button class="btn-cross" title="Reject" onclick="setStatus(${b.id}, 'Rejected')">✖</button>
+            </div>
+          ` : '—'}
+        </td>
+      </tr>
+    `).join('');
+    updateBadge();
+  }
+
+  function viewUserFiles(id) {
+      const b = bills.find(x => x.id === id);
+      const container = document.getElementById('file-list-container');
+      container.innerHTML = ""; // Clear old list
+
+      if(b.files && b.files.length > 0) {
+          b.files.forEach((file, index) => {
+              // Create a temporary URL for the file
+              const fileUrl = URL.createObjectURL(file);
+              
+              const link = document.createElement('a');
+              link.href = fileUrl;
+              link.target = "_blank"; // Open in new tab
+              link.download = file.name; // Allow download
+              link.className = "file-link";
+              link.innerHTML = `${index + 1}. 📄 ${file.name} <span style="font-size:10px; float:right; color:#999;">(Click to view/download)</span>`;
+              
+              container.appendChild(link);
+          });
+      } else {
+          container.innerHTML = "<p style='color:#999;'>No files available.</p>";
+      }
+      document.getElementById('file-modal').style.display = 'flex';
+  }
+
+  function setStatus(id, s) {
+    const b = bills.find(x => x.id === id);
+    if(b) { b.status = s; renderAdmin(); showToast('Status Updated!'); }
+  }
+</script>
+</body>
+</html>
