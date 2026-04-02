@@ -105,6 +105,19 @@
 
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 50px; opacity: 0; transition: 0.3s; z-index: 3000; }
     .toast.show { opacity: 1; }
+
+    /* MOBILE RESPONSIVENESS */
+    @media (max-width: 768px) {
+      .navbar { padding: 0 1rem; }
+      .logo { font-size: 18px; }
+      .hero { padding: 2rem 1rem 4rem; }
+      .hero h1 { font-size: 1.8rem; }
+      .form-grid { grid-template-columns: 1fr; gap: 10px; }
+      .main-content { padding: 0 10px; margin-top: -3rem !important; }
+      .card { padding: 1.5rem 1rem; }
+      .stats-container { grid-template-columns: 1fr; margin-top: -3rem; }
+      .table-wrap { margin: 0 -1rem; padding: 0 1rem; }
+    }
   </style>
 </head>
 <body>
@@ -215,7 +228,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // Firebase Configuration
   const firebaseConfig = {
     apiKey: "AIzaSyDXLsuGxm3hP1w56KQtc_WsnmlNXUNfr7g",
     authDomain: "sai-expense-portal.firebaseapp.com",
@@ -226,7 +238,6 @@
     appId: "1:258449874686:web:7861d6a6654a4ce5964faf"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const rtdb = firebase.database();
   const storage = firebase.storage();
@@ -235,7 +246,6 @@
   let currentFileObjects = []; 
   let isAdminAuthenticated = false;
 
-  // Realtime Sync: Listen for data changes in Firebase
   rtdb.ref('bills').on('value', (snapshot) => {
       bills = [];
       snapshot.forEach((child) => {
@@ -277,18 +287,17 @@
     document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} files attached`;
   }
 
-  // UPDATED: Submit Bill to Cloud
- async function submitBill() {
+  // FIXED: Skips Storage and saves directly to DB to avoid "Uploading..." hang
+  async function submitBill() {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('u-name').value;
-    const amt = parseFloat(document.getElementById('u-amount').value || 0);
     const centre = document.getElementById('u-centre').value;
     const date = document.getElementById('u-date').value;
     const program = document.getElementById('u-program').value;
     const cat = document.getElementById('u-cat').value;
+    const amt = parseFloat(document.getElementById('u-amount').value || 0);
     const desc = document.getElementById('u-desc').value;
 
-    // 1. Validation (We removed the file requirement here)
     if (!name || amt <= 0) { 
         showToast('⚠️ Please fill in the Name and Amount'); 
         return; 
@@ -298,8 +307,6 @@
     btn.innerText = "Submitting..."; 
 
     try {
-        // 2. Push directly to Realtime Database
-        // We put a placeholder for files since Storage is disabled
         await rtdb.ref('bills').push({
             name, centre, date, program, cat, amt, desc,
             files: [{ name: "No File (Storage Disabled)", url: "#" }], 
@@ -307,8 +314,8 @@
             timestamp: Date.now()
         });
 
-        // 3. Success - Clear the form
         document.querySelectorAll('#user-page input, #user-page select').forEach(i => i.value = '');
+        document.getElementById('dz-text').innerHTML = `📎 <strong>Click or drag files (PDF/Image)</strong>`;
         showToast('✅ Expense Submitted Successfully!');
 
     } catch (e) {
