@@ -350,7 +350,9 @@
         <td>${b.centre}</td>
         <td><strong>₹${(b.amt || 0).toLocaleString()}</strong></td>
         <td>${b.date}</td>
-        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.desc}</td>
+<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.desc}">
+    ${b.desc}
+</td
         <td>${b.program}</td>
         <td><button class="btn-view" onclick="viewUserFiles('${b.id}')">View (${b.files ? b.files.length : 0})</button></td>
         <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
