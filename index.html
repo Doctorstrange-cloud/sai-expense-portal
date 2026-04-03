@@ -7,7 +7,6 @@
   
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <style>
@@ -33,7 +32,10 @@
     .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--gray-900); }
     .logo em { color: var(--blue-600); font-style: normal; }
     .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-badge { background: var(--blue-50); color: var(--blue-600); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 100px; }
+    
+    /* REMOVED PENDING BADGE FROM USER VIEW VIA CSS LOGIC BELOW */
+    #pending-badge-nav { display: none; background: var(--blue-50); color: var(--blue-600); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 100px; }
+
     .nav-switch { display: flex; background: var(--gray-100); border-radius: 100px; padding: 3px; }
     .nav-switch button { padding: 6px 18px; border: none; border-radius: 100px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--gray-400); transition: 0.2s; }
     .nav-switch button.active { background: var(--white); color: var(--blue-600); box-shadow: var(--shadow-sm); }
@@ -45,23 +47,21 @@
     .hero h1 { font-family: 'DM Serif Display', serif; font-size: 2.8rem; margin-bottom: 0.5rem; }
     .hero p { opacity: 0.8; font-size: 15px; }
 
-    /* ADMIN STAT CARDS */
     .stats-container {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-        max-width: 1150px; margin: -3.5rem auto 2rem; padding: 0 1.5rem;
+        max-width: 1250px; margin: -3.5rem auto 2rem; padding: 0 1.5rem;
     }
-    .stat-card {
-        background: white; padding: 1.5rem; border-radius: 16px; box-shadow: var(--shadow-md); border-left: 4px solid var(--blue-400);
-    }
+    .stat-card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: var(--shadow-md); border-left: 4px solid var(--blue-400); }
     .stat-card:nth-child(2) { border-left-color: #f59e0b; }
     .stat-card:nth-child(3) { border-left-color: #10b981; }
     .stat-label { font-size: 11px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-value { font-size: 28px; font-weight: 600; color: var(--gray-900); margin: 5px 0; }
-    .stat-sub { font-size: 12px; color: var(--gray-400); }
 
-    .main-content { max-width: 1150px; margin: 0 auto 3rem; padding: 0 1.5rem; }
+    .main-content { max-width: 1250px; margin: 0 auto 3rem; padding: 0 1.5rem; }
     .card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 2rem; margin-bottom: 1.5rem; }
     
+    .admin-filter-bar { display: grid; grid-template-columns: 1fr 1fr 150px 150px; gap: 10px; margin-bottom: 15px; }
+
     /* MODALS */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -70,22 +70,23 @@
     }
     .modal-content {
       background: white; padding: 2.5rem; border-radius: var(--radius-xl);
-      width: 400px; text-align: center; box-shadow: var(--shadow-md);
+      width: 480px; text-align: center; box-shadow: var(--shadow-md);
     }
 
     /* TABLE */
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
     th { text-align: left; padding: 15px; font-size: 11px; color: var(--gray-400); text-transform: uppercase; border-bottom: 2px solid var(--gray-100); }
     td { padding: 15px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
     
     .btn-view { background: var(--blue-50); color: var(--blue-600); border: 1px solid var(--blue-100); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
-    
+    .btn-del { color: var(--red-600); border: none; background: none; cursor: pointer; font-size: 18px; }
+
     /* USER FORM */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group label { font-size: 12px; font-weight: 500; color: var(--gray-600); }
-    .form-group input, .form-group select { padding: 10px 12px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-md); background: var(--gray-50); }
+    .form-group input, .form-group select { padding: 10px 12px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-md); background: var(--gray-50); outline: none; }
     .form-full { grid-column: 1 / -1; }
     .drop-zone { border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 2rem 1rem; text-align: center; cursor: pointer; background: var(--gray-50); }
     .btn-primary { width: 100%; padding: 13px; background: var(--blue-600); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
@@ -93,30 +94,18 @@
     .badge { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; }
     .badge-pending { background: var(--amber-50); color: var(--amber-600); }
     .badge-approved { background: var(--teal-50); color: var(--teal-600); }
-    .badge-rejected { background: var(--red-50); color: var(--red-600); }
 
-    /* ACTION BUTTONS */
-    .action-group { display: flex; gap: 8px; }
+    .action-group { display: flex; gap: 8px; align-items: center; }
     .btn-tick { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--teal-400); color: var(--teal-600); background: var(--teal-50); cursor: pointer; }
-    .btn-cross { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--red-600); color: var(--red-600); background: var(--red-50); cursor: pointer; }
     
-    .file-link { display: block; padding: 10px; margin-bottom: 5px; background: #f8fafc; border-radius: 6px; text-decoration: none; color: var(--blue-600); font-weight: 500; border: 1px solid #e2e8f0; }
-    .file-link:hover { background: var(--blue-50); }
-
+    .file-preview-img { width: 100%; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 50px; opacity: 0; transition: 0.3s; z-index: 3000; }
     .toast.show { opacity: 1; }
 
-    /* MOBILE RESPONSIVENESS */
     @media (max-width: 768px) {
-      .navbar { padding: 0 1rem; }
-      .logo { font-size: 18px; }
-      .hero { padding: 2rem 1rem 4rem; }
-      .hero h1 { font-size: 1.8rem; }
-      .form-grid { grid-template-columns: 1fr; gap: 10px; }
-      .main-content { padding: 0 10px; margin-top: -3rem !important; }
-      .card { padding: 1.5rem 1rem; }
-      .stats-container { grid-template-columns: 1fr; margin-top: -3rem; }
-      .table-wrap { margin: 0 -1rem; padding: 0 1rem; }
+      .admin-filter-bar { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-container { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -134,16 +123,16 @@
 
 <div id="file-modal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-bottom:15px; font-family: 'DM Serif Display';">Download/View Files</h3>
-      <div id="file-list-container" style="text-align:left; margin-bottom:20px;"></div>
-      <button class="btn-primary" onclick="document.getElementById('file-modal').style.display='none'">Close</button>
+      <h3 style="margin-bottom:15px; font-family: 'DM Serif Display';">View Receipts</h3>
+      <div id="file-list-container" style="max-height: 400px; overflow-y: auto; text-align:center;"></div>
+      <button class="btn-primary" style="margin-top:15px;" onclick="document.getElementById('file-modal').style.display='none'">Close</button>
     </div>
 </div>
 
 <nav class="navbar">
   <div class="logo"><em>Sai Expense</em> Portal</div>
   <div class="nav-right">
-    <span class="nav-badge" id="pending-badge-nav">0 pending</span>
+    <span id="pending-badge-nav">0 pending</span>
     <div class="nav-switch">
       <button id="btn-user" class="active" onclick="switchView('user', this)">User</button>
       <button id="btn-admin" onclick="switchView('admin', this)">Admin</button>
@@ -160,17 +149,17 @@
     <div class="card">
       <div class="card-title" style="font-weight: 600; font-size: 18px; margin-bottom: 20px;">📤 New submission</div>
       <div class="form-grid">
-        <div class="form-group"><label>Full name</label><input type="text" id="u-name" placeholder="Name" /></div>
-        <div class="form-group"><label>Centre name</label><input type="text" id="u-centre" placeholder="Centre" /></div>
+        <div class="form-group"><label>Full name</label><input type="text" id="u-name" placeholder="Enter Name" /></div>
+        <div class="form-group"><label>Centre name</label><input type="text" id="u-centre" placeholder="Enter Centre" /></div>
         <div class="form-group"><label>Date of Expense</label><input type="date" id="u-date" /></div>
         <div class="form-group"><label>Program Type</label><select id="u-program"><option value="">Select Program</option><option>NSP Regular</option><option>NSP Makeup</option><option>Cluster Regular</option><option>Cluster Makeup</option><option>Other</option></select></div>
         <div class="form-group"><label>Category</label><select id="u-cat"><option value="">Select Category</option><option>Travel</option><option>Stationary</option><option>Other</option></select></div>
         <div class="form-group"><label>Amount (₹)</label><input type="number" id="u-amount" placeholder="0.00" /></div>
-        <div class="form-group form-full"><label>Description</label><input type="text" id="u-desc" placeholder="Details..." /></div>
+        <div class="form-group form-full"><label>Description</label><input type="text" id="u-desc" placeholder="Details about this expense..." /></div>
       </div>
       <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-        <p id="dz-text">📎 <strong>Click or drag files (PDF/Image)</strong></p>
-        <input type="file" id="file-input" style="display:none" onchange="handleFiles(this.files)" multiple />
+        <p id="dz-text">📎 <strong>Click to attach receipts (Image required)</strong></p>
+        <input type="file" id="file-input" style="display:none" onchange="handleFiles(this.files)" multiple accept="image/*" />
       </div>
       <br><button class="btn-primary" id="submit-btn" onclick="submitBill()">Submit Bill →</button>
     </div>
@@ -178,42 +167,38 @@
 </div>
 
 <div class="page" id="admin-page">
-  <div class="hero">
-    <h1>Admin dashboard</h1>
-    <p>Review, approve and manage all expense submissions</p>
-  </div>
-  
+  <div class="hero"><h1>Admin Dashboard</h1><p>Review and filter submissions</p></div>
   <div class="stats-container">
-      <div class="stat-card">
-          <div class="stat-label">Total Submissions</div>
-          <div class="stat-value" id="stat-total">0</div>
-          <div class="stat-sub">All time</div>
-      </div>
-      <div class="stat-card">
-          <div class="stat-label">Pending Review</div>
-          <div class="stat-value" id="stat-pending">0</div>
-          <div class="stat-sub">Needs action</div>
-      </div>
-      <div class="stat-card">
-          <div class="stat-label">Total Amount</div>
-          <div class="stat-value" id="stat-amount">₹0</div>
-          <div class="stat-sub">All submissions</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Total Submissions</div><div class="stat-value" id="stat-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Action</div><div class="stat-value" id="stat-pending">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total Value</div><div class="stat-value" id="stat-amount">₹0</div></div>
   </div>
 
   <div class="main-content">
+    <div class="admin-filter-bar">
+        <input type="text" id="filter-name" placeholder="Search Name" onkeyup="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+        <input type="text" id="filter-centre" placeholder="Search Centre" onkeyup="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+        <select id="filter-month" onchange="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+            <option value="All">All Months</option>
+            <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+        </select>
+        <select id="filter-status" onchange="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+            <option value="All">All Status</option><option value="Pending">Pending</option><option value="Approved">Approved</option>
+        </select>
+    </div>
     <div class="card">
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Employee</th>
+              <th>Name</th>
               <th>Centre</th>
-              <th>Category</th>
               <th>Amount</th>
-              <th>Description</th>
-              <th>Files</th>
               <th>Date</th>
+              <th>Description</th>
+              <th>Program</th>
+              <th>Files</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -240,17 +225,13 @@
 
   firebase.initializeApp(firebaseConfig);
   const rtdb = firebase.database();
-  const storage = firebase.storage();
-
   let bills = [];
   let currentFileObjects = []; 
   let isAdminAuthenticated = false;
 
   rtdb.ref('bills').on('value', (snapshot) => {
       bills = [];
-      snapshot.forEach((child) => {
-          bills.push({ id: child.key, ...child.val() });
-      });
+      snapshot.forEach((child) => { bills.push({ id: child.key, ...child.val() }); });
       if(document.getElementById('admin-page').classList.contains('active')) renderAdmin();
       updateBadge();
   });
@@ -258,14 +239,14 @@
   function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); }
 
   function switchView(v, btn) {
-    if (v === 'admin' && !isAdminAuthenticated) {
-      document.getElementById('login-modal').style.display = 'flex';
-      return;
-    }
+    if (v === 'admin' && !isAdminAuthenticated) { document.getElementById('login-modal').style.display = 'flex'; return; }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-switch button').forEach(b => b.classList.remove('active'));
     document.getElementById(v + '-page').classList.add('active');
     btn.classList.add('active');
+    
+    // Show badge only on Admin side
+    document.getElementById('pending-badge-nav').style.display = (v === 'admin') ? 'block' : 'none';
     if(v === 'admin') renderAdmin();
   }
 
@@ -277,114 +258,106 @@
     } else { alert("Invalid Credentials"); }
   }
 
-  function closeLogin() {
-    document.getElementById('login-modal').style.display = 'none';
-    switchView('user', document.getElementById('btn-user'));
-  }
+  function closeLogin() { document.getElementById('login-modal').style.display = 'none'; switchView('user', document.getElementById('btn-user')); }
 
   function handleFiles(files) {
     currentFileObjects = Array.from(files);
-    document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} files attached`;
+    document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} receipts attached`;
   }
 
-  // FIXED: Skips Storage and saves directly to DB to avoid "Uploading..." hang
+  const fileToBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
   async function submitBill() {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('u-name').value;
     const centre = document.getElementById('u-centre').value;
     const date = document.getElementById('u-date').value;
-    const program = document.getElementById('u-program').value;
-    const cat = document.getElementById('u-cat').value;
     const amt = parseFloat(document.getElementById('u-amount').value || 0);
-    const desc = document.getElementById('u-desc').value;
 
-    if (!name || amt <= 0) { 
-        showToast('⚠️ Please fill in the Name and Amount'); 
-        return; 
+    if (!name || !centre || !date || amt <= 0 || currentFileObjects.length === 0) { 
+        showToast('⚠️ Please fill all fields and attach receipts!'); return; 
     }
 
-    btn.disabled = true;
-    btn.innerText = "Submitting..."; 
+    btn.disabled = true; btn.innerText = "Submitting..."; 
 
     try {
+        let fileData = [];
+        for (let file of currentFileObjects) {
+            const b64 = await fileToBase64(file);
+            fileData.push({ name: file.name, url: b64 });
+        }
+
         await rtdb.ref('bills').push({
-            name, centre, date, program, cat, amt, desc,
-            files: [{ name: "No File (Storage Disabled)", url: "#" }], 
-            status: 'Pending',
-            timestamp: Date.now()
+            name, centre, date, amt,
+            program: document.getElementById('u-program').value || 'N/A',
+            cat: document.getElementById('u-cat').value,
+            desc: document.getElementById('u-desc').value || 'No description',
+            files: fileData, status: 'Pending', timestamp: Date.now()
         });
 
         document.querySelectorAll('#user-page input, #user-page select').forEach(i => i.value = '');
-        document.getElementById('dz-text').innerHTML = `📎 <strong>Click or drag files (PDF/Image)</strong>`;
+        currentFileObjects = [];
+        document.getElementById('dz-text').innerHTML = `📎 <strong>Click to attach receipts (Image required)</strong>`;
         showToast('✅ Expense Submitted Successfully!');
-
-    } catch (e) {
-        console.error("Database Error:", e);
-        showToast('❌ Error: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Submit Bill →";
-    }
-}
+    } catch (e) { showToast('❌ Error: ' + e.message); } finally { btn.disabled = false; btn.innerText = "Submit Bill →"; }
+  }
 
   function updateBadge() {
     const count = bills.filter(b => b.status === 'Pending').length;
     document.getElementById('pending-badge-nav').textContent = count + ' pending';
     document.getElementById('stat-total').textContent = bills.length;
     document.getElementById('stat-pending').textContent = count;
-    const totalAmt = bills.reduce((sum, b) => sum + b.amt, 0);
-    document.getElementById('stat-amount').textContent = '₹' + totalAmt.toLocaleString();
+    document.getElementById('stat-amount').textContent = '₹' + bills.reduce((sum, b) => sum + b.amt, 0).toLocaleString();
   }
 
   function renderAdmin() {
-    const tbody = document.getElementById('admin-body');
-    tbody.innerHTML = bills.map(b => `
+    const nameF = document.getElementById('filter-name').value.toLowerCase();
+    const centreF = document.getElementById('filter-centre').value.toLowerCase();
+    const monthF = document.getElementById('filter-month').value;
+    const statusF = document.getElementById('filter-status').value;
+
+    const filtered = bills.filter(b => {
+        const matchName = b.name.toLowerCase().includes(nameF);
+        const matchCentre = b.centre.toLowerCase().includes(centreF);
+        const matchMonth = monthF === 'All' || (b.date && b.date.split('-')[1] === monthF);
+        const matchStatus = statusF === 'All' || b.status === statusF;
+        return matchName && matchCentre && matchMonth && matchStatus;
+    });
+
+    document.getElementById('admin-body').innerHTML = filtered.map(b => `
       <tr>
         <td><strong>${b.name}</strong></td>
         <td>${b.centre}</td>
-        <td>${b.cat}</td>
         <td><strong>₹${b.amt.toLocaleString()}</strong></td>
-        <td>${b.desc || '—'}</td>
-        <td><button class="btn-view" onclick="viewUserFiles('${b.id}')">View Files (${b.files ? b.files.length : 0})</button></td>
         <td>${b.date}</td>
+        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.desc}">${b.desc}</td>
+        <td>${b.program}</td>
+        <td><button class="btn-view" onclick="viewUserFiles('${b.id}')">View (${b.files ? b.files.length : 0})</button></td>
         <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
         <td>
-          ${b.status === 'Pending' ? `
             <div class="action-group">
-                <button class="btn-tick" title="Approve" onclick="setStatus('${b.id}', 'Approved')">✔</button>
-                <button class="btn-cross" title="Reject" onclick="setStatus('${b.id}', 'Rejected')">✖</button>
+                ${b.status === 'Pending' ? `<button class="btn-tick" title="Approve" onclick="setStatus('${b.id}', 'Approved')">✔</button>` : ''}
+                <button class="btn-del" onclick="deleteBill('${b.id}')" title="Delete Entry">🗑️</button>
             </div>
-          ` : '—'}
         </td>
       </tr>
     `).join('');
-    updateBadge();
   }
 
   function viewUserFiles(id) {
       const b = bills.find(x => x.id === id);
       const container = document.getElementById('file-list-container');
-      container.innerHTML = ""; 
-
-      if(b.files && b.files.length > 0) {
-          b.files.forEach((file, index) => {
-              const link = document.createElement('a');
-              link.href = file.url;
-              link.target = "_blank"; 
-              link.className = "file-link";
-              link.innerHTML = `${index + 1}. 📄 ${file.name} <span style="font-size:10px; float:right; color:#999;">(View)</span>`;
-              container.appendChild(link);
-          });
-      } else {
-          container.innerHTML = "<p style='color:#999;'>No files available.</p>";
-      }
+      container.innerHTML = (b.files || []).map(f => `<img src="${f.url}" class="file-preview-img">`).join('') || "No files available";
       document.getElementById('file-modal').style.display = 'flex';
   }
 
-  function setStatus(id, s) {
-    rtdb.ref(`bills/${id}`).update({ status: s });
-    showToast('Status Updated!');
-  }
+  function setStatus(id, s) { rtdb.ref(`bills/${id}`).update({ status: s }); showToast('Updated!'); }
+  function deleteBill(id) { if(confirm("Are you sure you want to delete this entry?")) { rtdb.ref(`bills/${id}`).remove(); showToast('Deleted!'); } }
 </script>
 </body>
 </html>
