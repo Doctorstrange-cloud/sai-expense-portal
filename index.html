@@ -33,7 +33,6 @@
     .logo em { color: var(--blue-600); font-style: normal; }
     .nav-right { display: flex; align-items: center; gap: 12px; }
     
-    /* REMOVED PENDING BADGE FROM USER VIEW VIA CSS LOGIC BELOW */
     #pending-badge-nav { display: none; background: var(--blue-50); color: var(--blue-600); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 100px; }
 
     .nav-switch { display: flex; background: var(--gray-100); border-radius: 100px; padding: 3px; }
@@ -62,7 +61,6 @@
     
     .admin-filter-bar { display: grid; grid-template-columns: 1fr 1fr 150px 150px; gap: 10px; margin-bottom: 15px; }
 
-    /* MODALS */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(4, 44, 83, 0.85); backdrop-filter: blur(8px);
@@ -73,7 +71,6 @@
       width: 480px; text-align: center; box-shadow: var(--shadow-md);
     }
 
-    /* TABLE */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
     th { text-align: left; padding: 15px; font-size: 11px; color: var(--gray-400); text-transform: uppercase; border-bottom: 2px solid var(--gray-100); }
@@ -82,7 +79,6 @@
     .btn-view { background: var(--blue-50); color: var(--blue-600); border: 1px solid var(--blue-100); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
     .btn-del { color: var(--red-600); border: none; background: none; cursor: pointer; font-size: 18px; }
 
-    /* USER FORM */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group label { font-size: 12px; font-weight: 500; color: var(--gray-600); }
@@ -158,8 +154,8 @@
         <div class="form-group form-full"><label>Description</label><input type="text" id="u-desc" placeholder="Details about this expense..." /></div>
       </div>
       <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-        <p id="dz-text">📎 <strong>Click to attach receipts (Image required)</strong></p>
-        <input type="file" id="file-input" style="display:none" onchange="handleFiles(this.files)" multiple accept="image/*" />
+        <p id="dz-text">📎 <strong>Click to attach receipts (Image or PDF)</strong></p>
+        <input type="file" id="file-input" style="display:none" onchange="handleFiles(this.files)" multiple accept="image/*,.pdf" />
       </div>
       <br><button class="btn-primary" id="submit-btn" onclick="submitBill()">Submit Bill →</button>
     </div>
@@ -244,8 +240,6 @@
     document.querySelectorAll('.nav-switch button').forEach(b => b.classList.remove('active'));
     document.getElementById(v + '-page').classList.add('active');
     btn.classList.add('active');
-    
-    // Show badge only on Admin side
     document.getElementById('pending-badge-nav').style.display = (v === 'admin') ? 'block' : 'none';
     if(v === 'admin') renderAdmin();
   }
@@ -262,14 +256,31 @@
 
   function handleFiles(files) {
     currentFileObjects = Array.from(files);
-    document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} receipts attached`;
+    document.getElementById('dz-text').innerHTML = `✅ ${currentFileObjects.length} files attached`;
   }
 
-  const fileToBase64 = file => new Promise((resolve, reject) => {
+  const processFile = (file) => new Promise((resolve) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
+    if (file.type === "application/pdf") {
+      reader.readAsDataURL(file);
+      reader.onload = (e) => resolve({ type: 'pdf', data: e.target.result });
+    } else {
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve({ type: 'image', data: canvas.toDataURL('image/jpeg', 0.6) });
+        };
+      };
+    }
   });
 
   async function submitBill() {
@@ -280,16 +291,16 @@
     const amt = parseFloat(document.getElementById('u-amount').value || 0);
 
     if (!name || !centre || !date || amt <= 0 || currentFileObjects.length === 0) { 
-        showToast('⚠️ Please fill all fields and attach receipts!'); return; 
+        showToast('⚠️ Please fill all fields and attach files!'); return; 
     }
 
-    btn.disabled = true; btn.innerText = "Submitting..."; 
+    btn.disabled = true; btn.innerText = "Processing Files..."; 
 
     try {
         let fileData = [];
         for (let file of currentFileObjects) {
-            const b64 = await fileToBase64(file);
-            fileData.push({ name: file.name, url: b64 });
+            const res = await processFile(file);
+            fileData.push({ name: file.name, url: res.data, fType: res.type });
         }
 
         await rtdb.ref('bills').push({
@@ -302,8 +313,8 @@
 
         document.querySelectorAll('#user-page input, #user-page select').forEach(i => i.value = '');
         currentFileObjects = [];
-        document.getElementById('dz-text').innerHTML = `📎 <strong>Click to attach receipts (Image required)</strong>`;
-        showToast('✅ Expense Submitted Successfully!');
+        document.getElementById('dz-text').innerHTML = `📎 <strong>Click to attach receipts (Image or PDF)</strong>`;
+        showToast('✅ Submitted Successfully!');
     } catch (e) { showToast('❌ Error: ' + e.message); } finally { btn.disabled = false; btn.innerText = "Submit Bill →"; }
   }
 
@@ -312,7 +323,7 @@
     document.getElementById('pending-badge-nav').textContent = count + ' pending';
     document.getElementById('stat-total').textContent = bills.length;
     document.getElementById('stat-pending').textContent = count;
-    document.getElementById('stat-amount').textContent = '₹' + bills.reduce((sum, b) => sum + b.amt, 0).toLocaleString();
+    document.getElementById('stat-amount').textContent = '₹' + bills.reduce((sum, b) => sum + (b.amt || 0), 0).toLocaleString();
   }
 
   function renderAdmin() {
@@ -322,8 +333,8 @@
     const statusF = document.getElementById('filter-status').value;
 
     const filtered = bills.filter(b => {
-        const matchName = b.name.toLowerCase().includes(nameF);
-        const matchCentre = b.centre.toLowerCase().includes(centreF);
+        const matchName = (b.name || "").toLowerCase().includes(nameF);
+        const matchCentre = (b.centre || "").toLowerCase().includes(centreF);
         const matchMonth = monthF === 'All' || (b.date && b.date.split('-')[1] === monthF);
         const matchStatus = statusF === 'All' || b.status === statusF;
         return matchName && matchCentre && matchMonth && matchStatus;
@@ -333,16 +344,16 @@
       <tr>
         <td><strong>${b.name}</strong></td>
         <td>${b.centre}</td>
-        <td><strong>₹${b.amt.toLocaleString()}</strong></td>
+        <td><strong>₹${(b.amt || 0).toLocaleString()}</strong></td>
         <td>${b.date}</td>
-        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.desc}">${b.desc}</td>
+        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.desc}</td>
         <td>${b.program}</td>
         <td><button class="btn-view" onclick="viewUserFiles('${b.id}')">View (${b.files ? b.files.length : 0})</button></td>
         <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
         <td>
             <div class="action-group">
                 ${b.status === 'Pending' ? `<button class="btn-tick" title="Approve" onclick="setStatus('${b.id}', 'Approved')">✔</button>` : ''}
-                <button class="btn-del" onclick="deleteBill('${b.id}')" title="Delete Entry">🗑️</button>
+                <button class="btn-del" onclick="deleteBill('${b.id}')" title="Delete">🗑️</button>
             </div>
         </td>
       </tr>
@@ -352,12 +363,38 @@
   function viewUserFiles(id) {
       const b = bills.find(x => x.id === id);
       const container = document.getElementById('file-list-container');
-      container.innerHTML = (b.files || []).map(f => `<img src="${f.url}" class="file-preview-img">`).join('') || "No files available";
+      
+      container.innerHTML = (b.files || []).map((f, index) => {
+          if (f.fType === 'pdf') {
+              return `<div style="margin-bottom:15px; padding:15px; border:1px solid #ddd; border-radius:8px;">
+                        <p style="font-size:12px; margin-bottom:10px;">📄 ${f.name}</p>
+                        <button onclick="openPDF('${id}', ${index})" style="background:#185FA5; color:white; padding:8px 15px; border:none; border-radius:5px; font-size:12px; cursor:pointer; display:inline-block;">View PDF Document</button>
+                      </div>`;
+          } else {
+              return `<img src="${f.url}" class="file-preview-img" style="max-width:100%; border-radius:8px; margin-bottom:10px;">`;
+          }
+      }).join('') || "No files available";
+      
       document.getElementById('file-modal').style.display = 'flex';
   }
 
+  function openPDF(billId, fileIndex) {
+      const bill = bills.find(b => b.id === billId);
+      const file = bill.files[fileIndex];
+      const base64Data = file.url.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {type: 'application/pdf'});
+      const fileURL = URL.createObjectURL(blob);
+      window.open(fileURL, '_blank');
+  }
+
   function setStatus(id, s) { rtdb.ref(`bills/${id}`).update({ status: s }); showToast('Updated!'); }
-  function deleteBill(id) { if(confirm("Are you sure you want to delete this entry?")) { rtdb.ref(`bills/${id}`).remove(); showToast('Deleted!'); } }
+  function deleteBill(id) { if(confirm("Are you sure?")) { rtdb.ref(`bills/${id}`).remove(); showToast('Deleted!'); } }
 </script>
 </body>
 </html>
