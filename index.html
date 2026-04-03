@@ -400,5 +400,7 @@
   function setStatus(id, s) { rtdb.ref(`bills/${id}`).update({ status: s }); showToast('Updated!'); }
   function deleteBill(id) { if(confirm("Are you sure?")) { rtdb.ref(`bills/${id}`).remove(); showToast('Deleted!'); } }
 </script>
+  <footer style="text-align: center; padding: 30px 20px; color: var(--gray-400); font-size: 12px; border-top: 1px solid var(--gray-100); margin-top: 40px; letter-spacing: 1px;">
+  © 2026 SAI EXPENSE PORTAL || <b style="color: var(--blue-600);">KEERTHANA</b>
 </body>
 </html>
