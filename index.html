@@ -177,11 +177,7 @@
         <select id="filter-month" onchange="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
             <option value="All">All Months</option>
             <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-            <option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option>
-          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
-        </select>
-        </select>
+            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
         </select>
         <select id="filter-status" onchange="renderAdmin()" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
             <option value="All">All Status</option><option value="Pending">Pending</option><option value="Approved">Approved</option>
@@ -350,9 +346,10 @@
         <td>${b.centre}</td>
         <td><strong>₹${(b.amt || 0).toLocaleString()}</strong></td>
         <td>${b.date}</td>
+
 <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.desc}">
     ${b.desc}
-</td
+</td>
         <td>${b.program}</td>
         <td><button class="btn-view" onclick="viewUserFiles('${b.id}')">View (${b.files ? b.files.length : 0})</button></td>
         <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
@@ -402,7 +399,8 @@
   function setStatus(id, s) { rtdb.ref(`bills/${id}`).update({ status: s }); showToast('Updated!'); }
   function deleteBill(id) { if(confirm("Are you sure?")) { rtdb.ref(`bills/${id}`).remove(); showToast('Deleted!'); } }
 </script>
-  <footer style="text-align: center; padding: 30px 20px; color: var(--gray-400); font-size: 12px; border-top: 1px solid var(--gray-100); margin-top: 40px; letter-spacing: 1px;">
+<footer style="text-align: center; padding: 30px 20px; color: var(--gray-400); font-size: 12px; border-top: 1px solid var(--gray-100); margin-top: 40px; letter-spacing: 1px;">
   © 2026 SAI EXPENSE PORTAL || <b style="color: var(--blue-600);">KEERTHANA</b>
+</footer>
 </body>
 </html>
